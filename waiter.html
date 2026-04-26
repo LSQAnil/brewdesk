@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waiter – BrewDesk</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #fff;
+    --ink: #1a1a2e;
+    --muted: #888;
+    --accent: #c8873a;
+    --blue: #3961f5;
+    --green: #2a9d5c;
+    --red: #e05252;
+    --border: #e5e3dc;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  .nav {
+    background: var(--ink);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    color: var(--accent);
+    font-size: 20px;
+    padding: 14px 16px 14px 0;
+    margin-right: 8px;
+    border-right: 1px solid #333;
+  }
+  .nav-tab {
+    padding: 16px 20px;
+    color: #aaa;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { color: white; }
+  .nav-tab.active { color: white; border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  /* Tables View */
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    max-width: 900px;
+  }
+  .table-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    border: 2px solid var(--border);
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+  }
+  .table-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.12); }
+  .table-card.occupied { border-color: var(--accent); }
+  .table-name { font-family: 'Playfair Display', serif; font-size: 36px; margin-bottom: 4px; }
+  .table-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .table-status.free { background: #eafaf2; color: var(--green); }
+  .table-status.occupied { background: #fef3e7; color: var(--accent); }
+  .table-order-ref { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .table-order-status {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .dot-new { background: #ff4d4d; }
+  .dot-accepted { background: #f5a623; }
+  .dot-preparing { background: #4a9cf7; animation: blink 1s infinite; }
+  .dot-ready { background: #2ecc71; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Orders View */
+  .orders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+  }
+  .filter-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--muted);
+    background: white;
+    transition: all 0.2s;
+  }
+  .pill.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+  .orders-list { display: flex; flex-direction: column; gap: 12px; max-width: 780px; }
+
+  .order-row {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .order-row:hover { border-color: var(--accent); }
+  .order-row-table {
+    background: var(--ink);
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    min-width: 60px;
+    text-align: center;
+  }
+  .order-row-info { flex: 1; }
+  .order-row-ref { font-weight: 700; font-size: 15px; color: var(--accent); margin-bottom: 2px; }
+  .order-row-items { font-size: 13px; color: var(--muted); }
+  .order-row-right { text-align: right; }
+  .order-row-total { font-weight: 700; font-size: 17px; }
+  .order-row-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  .status-chip-new { background: #fff0f0; color: #e05252; }
+  .status-chip-accepted { background: #fff8ea; color: #c07a00; }
+  .status-chip-preparing { background: #eef4ff; color: #3961f5; }
+  .status-chip-ready { background: #eafaf2; color: var(--green); }
+  .status-chip-served { background: #f0f0f0; color: #888; }
+  .status-chip-paid { background: #f0faf5; color: var(--green); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 22px; }
+  .close-btn {
+    background: #f0f0f0;
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .bill-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .bill-table th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .bill-table td { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .bill-total-row td { font-weight: 700; font-size: 16px; border-bottom: none; padding-top: 12px; }
+
+  .pay-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .pay-btn:active { transform: scale(0.98); }
+  .pay-cash { background: var(--green); color: white; }
+  .pay-upi { background: #6941c6; color: white; }
+  .pay-done { background: #eee; color: #888; }
+
+  .upi-section { text-align: center; padding: 16px; background: #fafafa; border-radius: 12px; margin: 12px 0; }
+  .upi-id { font-size: 18px; font-weight: 700; color: var(--blue); letter-spacing: 1px; margin: 8px 0; }
+
+  /* Add order from waiter */
+  .add-order-form { padding: 16px 0; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+  .form-select, .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: white;
+  }
+  .form-select:focus, .form-input:focus { outline: none; border-color: var(--accent); }
+
+  .mini-menu { max-height: 300px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 10px; }
+  .mini-cat { padding: 8px 12px; background: var(--bg); font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .mini-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mini-item:hover { background: var(--bg); }
+  .mini-item:last-child { border-bottom: none; }
+  .mini-item-name { font-size: 14px; font-weight: 500; }
+  .mini-item-price { font-size: 13px; color: var(--accent); font-weight: 600; }
+  .mini-item-right { display: flex; align-items: center; gap: 8px; }
+  .mini-qty { font-weight: 700; min-width: 20px; text-align: center; }
+
+  .waiter-cart { margin-top: 12px; }
+  .waiter-cart-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .waiter-total { font-weight: 700; font-size: 17px; padding-top: 10px; display: flex; justify-content: space-between; }
+
+  .submit-order-btn {
+    width: 100%; margin-top: 12px; padding: 14px;
+    background: var(--green); color: white; border: none;
+    border-radius: 12px; font-size: 16px; font-weight: 700;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+  }
+  .submit-order-btn:disabled { opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo">☕ BrewDesk</div>
+  <div class="nav-tab active" onclick="showPage('tables',this)">Tables</div>
+  <div class="nav-tab" onclick="showPage('orders',this)">Orders</div>
+  <div class="nav-tab" onclick="showPage('new-order',this)">+ New Order</div>
+</div>
+
+<!-- Tables Page -->
+<div class="page active" id="page-tables">
+  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <h2 style="font-family:'Playfair Display',serif;font-size:22px">Tables</h2>
+    <span id="tables-summary" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+  <div class="tables-grid" id="tables-grid"></div>
+</div>
+
+<!-- Orders Page -->
+<div class="page" id="page-orders">
+  <div class="orders-header">
+    <h2 class="section-heading">Orders</h2>
+  </div>
+  <div class="filter-pills">
+    <div class="pill active" onclick="filterOrders('active',this)">Active</div>
+    <div class="pill" onclick="filterOrders('ready',this)">Ready to Serve</div>
+    <div class="pill" onclick="filterOrders('pending-payment',this)">Awaiting Payment</div>
+    <div class="pill" onclick="filterOrders('today',this)">All Today</div>
+  </div>
+  <div class="orders-list" id="orders-list"></div>
+</div>
+
+<!-- New Order Page -->
+<div class="page" id="page-new-order">
+  <h2 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:16px">New Order</h2>
+  <div class="add-order-form" style="max-width:520px">
+    <div class="form-row">
+      <label class="form-label">Select Table</label>
+      <select class="form-select" id="order-table-select"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Menu</label>
+      <div class="mini-menu" id="mini-menu-container"></div>
+    </div>
+    <div class="waiter-cart" id="waiter-cart" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px">SELECTED ITEMS</div>
+      <div id="waiter-cart-items"></div>
+      <div class="waiter-total">
+        <span>Total</span>
+        <span id="waiter-total-amount">₹0</span>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px">
+      <label class="form-label">Special Instructions (optional)</label>
+      <input class="form-input" id="waiter-notes" placeholder="e.g. no sugar, extra hot…">
+    </div>
+    <button class="submit-order-btn" id="waiter-submit" onclick="submitWaiterOrder()" disabled>Place Order</button>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+  let menu = [];
+  let tables = [];
+  let waiterCart = {};
+  let ordersFilter = 'active';
+  let settings = {};
+
+  async function init() {
+    [settings, menu, tables] = await Promise.all([
+      fetch('/api/settings').then(r=>r.json()),
+      fetch('/api/menu').then(r=>r.json()),
+      fetch('/api/tables').then(r=>r.json())
+    ]);
+    renderTables();
+    renderMiniMenu();
+    populateTableSelect();
+    loadOrders();
+  }
+
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (name === 'tables') { loadTables(); }
+    if (name === 'orders') loadOrders();
+  }
+
+  async function loadTables() {
+    tables = await fetch('/api/tables').then(r=>r.json());
+    renderTables();
+  }
+
+  function renderTables() {
+    const grid = document.getElementById('tables-grid');
+    const occupied = tables.filter(t => t.active_order).length;
+    document.getElementById('tables-summary').textContent = `${occupied} occupied / ${tables.length} total`;
+
+    grid.innerHTML = tables.map(t => {
+      const isOccupied = !!t.active_order;
+      const dotClass = isOccupied ? 'dot-' + t.active_order.status : '';
+      return `
+        <div class="table-card ${isOccupied?'occupied':''}" onclick="tableClick(${t.id})">
+          ${isOccupied ? `<div class="table-order-status ${dotClass}"></div>` : ''}
+          <div class="table-name">${t.name}</div>
+          <div class="table-status ${isOccupied?'occupied':'free'}">${isOccupied?'Occupied':'Free'}</div>
+          ${isOccupied ? `<div class="table-order-ref">#${t.active_order.order_ref} · ${t.active_order.status}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function tableClick(tableId) {
+    const t = tables.find(t => t.id === tableId);
+    if (t?.active_order) {
+      openOrderModal(t.active_order.id);
+    } else {
+      // Switch to new order tab and pre-select table
+      document.getElementById('order-table-select').value = tableId;
+      showPage('new-order', document.querySelectorAll('.nav-tab')[2]);
+    }
+  }
+
+  function renderMiniMenu() {
+    const container = document.getElementById('mini-menu-container');
+    container.innerHTML = menu.map(cat => `
+      <div class="mini-cat">${cat.name}</div>
+      ${cat.items.map(item => `
+        <div class="mini-item" id="mi-${item.id}">
+          <div>
+            <div class="mini-item-name">${item.name}</div>
+          </div>
+          <div class="mini-item-right">
+            <div class="mini-item-price">₹${item.price}</div>
+            ${waiterCart[item.id] ? `
+              <button style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink);background:white;cursor:pointer;font-size:16px" onclick="wChange(${item.id},-1)">−</button>
+              <span class="mini-qty">${waiterCart[item.id]}</span>
+            ` : ''}
+            <button style="width:26px;height:26px;border-radius:50%;border:none;background:var(--ink);color:white;cursor:pointer;font-size:18px" onclick="wChange(${item.id},1)">+</button>
+          </div>
+        </div>
+      `).join('')}
+    `).join('');
+  }
+
+  function wChange(itemId, delta) {
+    const cur = waiterCart[itemId] || 0;
+    const nw = cur + delta;
+    if (nw <= 0) delete waiterCart[itemId];
+    else waiterCart[itemId] = nw;
+    updateWaiterCart();
+    renderMiniMenu();
+  }
+
+  function updateWaiterCart() {
+    const items = getWaiterCartItems();
+    const totalItems = items.reduce((a,i)=>a+i.qty,0);
+    const total = items.reduce((a,i)=>a+i.price*i.qty,0);
+    const cartDiv = document.getElementById('waiter-cart');
+    const submitBtn = document.getElementById('waiter-submit');
+
+    if (totalItems === 0) {
+      cartDiv.style.display = 'none';
+      submitBtn.disabled = true;
+      return;
+    }
+    cartDiv.style.display = 'block';
+    submitBtn.disabled = false;
+    document.getElementById('waiter-cart-items').innerHTML = items.map(i =>
+      `<div class="waiter-cart-row"><span>${i.qty}× ${i.name}</span><span>₹${i.price*i.qty}</span></div>`
+    ).join('');
+    document.getElementById('waiter-total-amount').textContent = '₹' + total;
+  }
+
+  function getWaiterCartItems() {
+    const items = [];
+    menu.forEach(cat => cat.items.forEach(item => {
+      if (waiterCart[item.id]) items.push({ ...item, qty: waiterCart[item.id] });
+    }));
+    return items;
+  }
+
+  function populateTableSelect() {
+    const sel = document.getElementById('order-table-select');
+    sel.innerHTML = tables.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  }
+
+  async function submitWaiterOrder() {
+    const tableId = document.getElementById('order-table-select').value;
+    const items = getWaiterCartItems();
+    const btn = document.getElementById('waiter-submit');
+    btn.disabled = true; btn.textContent = 'Placing…';
+
+    try {
+      const resp = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table_id: parseInt(tableId),
+          items: items.map(i=>({item_id:i.id,quantity:i.qty})),
+          notes: document.getElementById('waiter-notes').value
+        })
+      });
+      const order = await resp.json();
+      waiterCart = {};
+      updateWaiterCart();
+      renderMiniMenu();
+      document.getElementById('waiter-notes').value = '';
+      btn.textContent = 'Place Order';
+      openOrderModal(order.id);
+    } catch(e) {
+      alert('Error: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+    }
+  }
+
+  // Orders list
+  async function loadOrders() {
+    let url = '/api/orders?';
+    if (ordersFilter === 'active') url += 'status=new,accepted,preparing';
+    else if (ordersFilter === 'ready') url += 'status=ready';
+    else if (ordersFilter === 'pending-payment') url += 'status=served';
+    else url += 'date=' + new Date().toISOString().slice(0,10);
+
+    const orders = await fetch(url).then(r=>r.json());
+    const list = document.getElementById('orders-list');
+    if (!orders.length) { list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:40px">No orders</p>'; return; }
+    list.innerHTML = orders.map(o => `
+      <div class="order-row" onclick="openOrderModal(${o.id})">
+        <div class="order-row-table">${o.table_name}</div>
+        <div class="order-row-info">
+          <div class="order-row-ref">#${o.order_ref}</div>
+          <div class="order-row-items">${o.items.slice(0,2).map(i=>i.quantity+'× '+i.name).join(', ')}${o.items.length>2?'…':''}</div>
+        </div>
+        <div class="order-row-right">
+          <div class="order-row-total">₹${o.total}</div>
+          <div class="order-row-status status-chip-${o.status}">${o.status}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterOrders(f, el) {
+    ordersFilter = f;
+    document.querySelectorAll('.filter-pills .pill').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    loadOrders();
+  }
+
+  async function openOrderModal(orderId) {
+    const order = await fetch('/api/orders/'+orderId).then(r=>r.json());
+    const modal = document.getElementById('modal-content');
+    const isServed = ['served','paid'].includes(order.status);
+
+    modal.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Table ${order.table_name}</div>
+          <div style="font-size:13px;color:var(--accent);font-weight:700;margin-top:2px">#${order.order_ref}</div>
+        </div>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${new Date(order.created_at).toLocaleString()}</div>
+
+      <table class="bill-table">
+        <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>
+          ${order.items.map(i=>`
+            <tr>
+              <td>${i.name}</td>
+              <td>${i.quantity}</td>
+              <td style="text-align:right">₹${(i.price*i.quantity).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+          <tr class="bill-total-row">
+            <td colspan="2">Total</td>
+            <td style="text-align:right">₹${order.total.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin:10px 0;display:flex;gap:8px;align-items:center">
+        <span style="font-size:13px;font-weight:600">Status:</span>
+        <select onchange="updateStatus(${order.id},this.value)" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px">
+          ${['new','accepted','preparing','ready','served','paid'].map(s=>`<option value="${s}" ${s===order.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+
+      ${order.payment_status === 'pending' ? `
+        <div style="margin-top:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">COLLECT PAYMENT</div>
+          ${settings.upi_id ? `
+            <div class="upi-section">
+              <div style="font-size:12px;color:var(--muted)">UPI ID</div>
+              <div class="upi-id">${settings.upi_id}</div>
+              <div style="font-size:20px;font-weight:700;color:var(--ink)">₹${order.total.toFixed(2)}</div>
+            </div>
+          ` : ''}
+          <button class="pay-btn pay-cash" onclick="markPaid(${order.id},'cash')">💵 Paid by Cash</button>
+          <button class="pay-btn pay-upi" style="margin-top:6px" onclick="markPaid(${order.id},'upi')">📱 Paid by UPI</button>
+        </div>
+      ` : `
+        <div style="text-align:center;padding:12px;background:#eafaf2;border-radius:10px;margin-top:12px">
+          <span style="color:var(--green);font-weight:700;font-size:15px">✅ Paid (${order.payment_method})</span>
+        </div>
+      `}
+    `;
+    document.getElementById('order-modal').classList.add('open');
+  }
+
+  async function updateStatus(orderId, status) {
+    await fetch(`/api/orders/${orderId}/status`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    closeModal();
+    loadTables();
+    loadOrders();
+  }
+
+  async function markPaid(orderId, method) {
+    await fetch(`/api/orders/${orderId}/payment`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_status: 'paid', payment_method: method })
+    });
+    closeModal();
+    loadTables();
+    loadOrders();
+  }
+
+  function closeModal() {
+    document.getElementById('order-modal').classList.remove('open');
+  }
+  document.getElementById('order-modal').addEventListener('click', e => {
+    if (e.target.id === 'order-modal') closeModal();
+  });
+
+  // Live updates
+  const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${wsProto}//${location.host}`);
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (['order:new','order:status','order:payment','order:updated'].includes(msg.event)) {
+      loadTables(); loadOrders();
+    }
+  };
+
+  init();
+  setInterval(() => { loadTables(); loadOrders(); }, 15000);
+</script>
+</body>
+</html>

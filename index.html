@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewDesk – Café System</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --accent: #c8873a;
+    --soft: #faf9f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: -1px;
+  }
+  .tagline {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .card {
+    background: #232336;
+    border-radius: 18px;
+    padding: 28px 20px;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    border: 1.5px solid #333;
+    transition: all 0.25s;
+    cursor: pointer;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    background: #272742;
+  }
+  .card-icon { font-size: 40px; margin-bottom: 10px; }
+  .card-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .card-desc { font-size: 12px; color: #888; line-height: 1.5; }
+
+  .server-info {
+    margin-top: 32px;
+    background: #232336;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: #888;
+    border: 1px solid #333;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  .server-info code {
+    color: var(--accent);
+    font-size: 14px;
+    font-family: monospace;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(46,204,113,0.1);
+    color: #2ecc71;
+    border: 1px solid rgba(46,204,113,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .live-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+  <div class="logo">☕ BrewDesk</div>
+  <div class="tagline">Offline-first café ordering system</div>
+
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    Server Running
+  </div>
+
+  <div class="cards">
+    <a class="card" href="/order?table=1">
+      <div class="card-icon">📱</div>
+      <div class="card-title">Customer Order</div>
+      <div class="card-desc">Scan table QR to view menu & place order</div>
+    </a>
+    <a class="card" href="/waiter.html">
+      <div class="card-icon">🙋</div>
+      <div class="card-title">Waiter</div>
+      <div class="card-desc">Manage tables, take orders & collect payment</div>
+    </a>
+    <a class="card" href="/kitchen.html">
+      <div class="card-icon">🍳</div>
+      <div class="card-title">Kitchen</div>
+      <div class="card-desc">View orders, update cooking status</div>
+    </a>
+    <a class="card" href="/admin.html">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">Admin</div>
+      <div class="card-desc">Menu, tables, reports & QR codes</div>
+    </a>
+  </div>
+
+  <div class="server-info">
+    Share this URL with devices on the same WiFi:<br>
+    <code id="server-url">http://[your-ip]:3000</code>
+    <br><br>
+    <span style="font-size:12px">All devices must be on the same network</span>
+  </div>
+
+  <script>
+    document.getElementById('server-url').textContent = 'http://' + location.host;
+  </script>
+</body>
+</html>

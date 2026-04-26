@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – BrewDesk</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+  :root {
+    --bg: #f5f4f0; --surface: #fff; --ink: #1a1a2e; --muted: #888;
+    --accent: #c8873a; --green: #2a9d5c; --red: #e05252; --blue: #3961f5;
+    --border: #e5e3dc; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); }
+
+  .nav {
+    background: var(--ink); padding: 0 20px;
+    display: flex; align-items: center; gap: 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 20px; padding: 14px 16px 14px 0; margin-right: 8px; border-right: 1px solid #333; }
+  .nav-tab { padding: 16px 18px; color: #aaa; font-size: 14px; font-weight: 500; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav-tab:hover { color: white; }
+  .nav-tab.active { color: white; border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 24px; max-width: 900px; }
+  .page.active { display: block; }
+
+  .page-title { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 20px; }
+
+  /* Stats Cards */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+
+  /* Tables */
+  .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .data-table th { background: var(--ink); color: white; font-size: 12px; font-weight: 600; padding: 12px 16px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; }
+  .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: #fafaf8; }
+
+  /* Forms */
+  .form-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  .form-card-title { font-weight: 700; font-size: 15px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .form-input, .form-select {
+    flex: 1; min-width: 120px; padding: 9px 12px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink);
+  }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+  .btn { padding: 9px 18px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--ink); color: white; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+  .btn-danger-sm { background: #fce8e8; color: var(--red); }
+  .btn-edit-sm { background: #eef2ff; color: var(--blue); }
+
+  .toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .toggle input { width: 16px; height: 16px; }
+
+  /* QR */
+  .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .qr-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); text-align: center; }
+  .qr-table-name { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 8px; }
+  .qr-canvas { margin: 0 auto 8px; }
+  .qr-url { font-size: 10px; color: var(--muted); word-break: break-all; }
+  .print-btn { margin-top: 8px; background: var(--ink); color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  .date-picker { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo">☕ Admin</div>
+  <div class="nav-tab active" onclick="showPage('reports',this)">Reports</div>
+  <div class="nav-tab" onclick="showPage('menu',this)">Menu</div>
+  <div class="nav-tab" onclick="showPage('tables',this)">Tables</div>
+  <div class="nav-tab" onclick="showPage('qr',this)">QR Codes</div>
+  <div class="nav-tab" onclick="showPage('settings',this)">Settings</div>
+</div>
+
+<!-- Reports -->
+<div class="page active" id="page-reports">
+  <h2 class="page-title">Daily Report</h2>
+  <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+    <label style="font-size:14px;font-weight:600">Date:</label>
+    <input type="date" class="date-picker" id="report-date" onchange="loadReport()">
+  </div>
+  <div class="stats-row" id="stats-row"></div>
+  <h3 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:12px">Orders by Table</h3>
+  <table class="data-table" id="table-report" style="margin-bottom:24px">
+    <thead><tr><th>Table</th><th>Orders</th><th>Revenue</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3 style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:12px">Top Items</h3>
+  <table class="data-table" id="items-report">
+    <thead><tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Menu -->
+<div class="page" id="page-menu">
+  <h2 class="page-title">Menu Management</h2>
+  <div class="form-card">
+    <div class="form-card-title">Add New Item</div>
+    <div class="form-row">
+      <select class="form-select" id="new-item-cat"></select>
+      <input class="form-input" id="new-item-name" placeholder="Item name">
+      <input class="form-input" id="new-item-desc" placeholder="Description (optional)">
+      <input class="form-input" id="new-item-price" type="number" placeholder="Price (₹)" style="max-width:100px">
+      <button class="btn btn-primary" onclick="addMenuItem()">Add</button>
+    </div>
+  </div>
+  <table class="data-table" id="menu-table">
+    <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Available</th><th>Actions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Tables -->
+<div class="page" id="page-tables">
+  <h2 class="page-title">Table Management</h2>
+  <div class="form-card">
+    <div class="form-card-title">Add Table</div>
+    <div class="form-row">
+      <input class="form-input" id="new-table-name" placeholder="e.g. T7 or Outdoor-1" style="max-width:200px">
+      <button class="btn btn-primary" onclick="addTable()">Add Table</button>
+    </div>
+  </div>
+  <table class="data-table" id="tables-table">
+    <thead><tr><th>Table Name</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- QR Codes -->
+<div class="page" id="page-qr">
+  <h2 class="page-title">QR Codes</h2>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Print these and place on each table. Customers scan to order.</p>
+  <div class="qr-grid" id="qr-grid"></div>
+</div>
+
+<!-- Settings -->
+<div class="page" id="page-settings">
+  <h2 class="page-title">Settings</h2>
+  <div class="form-card" style="max-width:460px">
+    <div class="form-card-title">Café Info</div>
+    <div class="form-row" style="flex-direction:column">
+      <label style="font-size:13px;font-weight:600;color:var(--muted)">Café Name</label>
+      <input class="form-input" id="s-cafe-name" placeholder="My Café">
+    </div>
+    <div class="form-row" style="flex-direction:column;margin-top:10px">
+      <label style="font-size:13px;font-weight:600;color:var(--muted)">UPI ID (for payment QR)</label>
+      <input class="form-input" id="s-upi-id" placeholder="yourcafe@upi">
+    </div>
+    <div class="form-row" style="flex-direction:column;margin-top:10px">
+      <label style="font-size:13px;font-weight:600;color:var(--muted)">Currency Symbol</label>
+      <input class="form-input" id="s-currency" placeholder="₹" style="max-width:80px">
+    </div>
+    <button class="btn btn-primary" style="margin-top:14px" onclick="saveSettings()">Save Settings</button>
+    <div id="settings-msg" style="font-size:13px;color:var(--green);margin-top:8px;display:none">✅ Saved!</div>
+  </div>
+</div>
+
+<!-- qrcode.js (CDN, works offline after first load) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  let allItems = [], allTables = [], allCategories = [], settings = {};
+
+  async function init() {
+    [allItems, allCategories, allTables, settings] = await Promise.all([
+      fetch('/api/menu/items').then(r=>r.json()),
+      fetch('/api/menu/categories').then(r=>r.json()),
+      fetch('/api/tables').then(r=>r.json()),
+      fetch('/api/settings').then(r=>r.json())
+    ]);
+    document.getElementById('report-date').value = new Date().toISOString().slice(0,10);
+    loadReport();
+    renderMenuTable();
+    renderTablesTable();
+    populateCategorySelect();
+    loadSettingsForm();
+  }
+
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    if (name === 'qr') renderQRCodes();
+  }
+
+  // ── Reports ────────────────────────────────────────────────────────────────
+  async function loadReport() {
+    const date = document.getElementById('report-date').value;
+    const report = await fetch('/api/reports/daily?date='+date).then(r=>r.json());
+    const s = report.summary;
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">${s.total_orders||0}</div></div>
+      <div class="stat-card"><div class="stat-label">Revenue (Paid)</div><div class="stat-value green">₹${(s.revenue||0).toFixed(0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Amount</div><div class="stat-value accent">₹${(s.pending_amount||0).toFixed(0)}</div></div>
+    `;
+
+    document.querySelector('#table-report tbody').innerHTML = report.byTable.map(r =>
+      `<tr><td>${r.table_name}</td><td>${r.orders}</td><td>₹${(r.total||0).toFixed(2)}</td></tr>`
+    ).join('') || '<tr><td colspan="3" style="color:var(--muted);text-align:center">No data</td></tr>';
+
+    document.querySelector('#items-report tbody').innerHTML = report.topItems.map(r =>
+      `<tr><td>${r.name}</td><td>${r.qty}</td><td>₹${(r.revenue||0).toFixed(2)}</td></tr>`
+    ).join('') || '<tr><td colspan="3" style="color:var(--muted);text-align:center">No data</td></tr>';
+  }
+
+  // ── Menu ───────────────────────────────────────────────────────────────────
+  function populateCategorySelect() {
+    document.getElementById('new-item-cat').innerHTML = allCategories.map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join('');
+  }
+
+  async function addMenuItem() {
+    const name = document.getElementById('new-item-name').value.trim();
+    const price = parseFloat(document.getElementById('new-item-price').value);
+    const cat = document.getElementById('new-item-cat').value;
+    const desc = document.getElementById('new-item-desc').value.trim();
+    if (!name || !price) return alert('Name and price required');
+
+    await fetch('/api/menu/items', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id: parseInt(cat), name, description: desc, price })
+    });
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    document.getElementById('new-item-desc').value = '';
+    allItems = await fetch('/api/menu/items').then(r=>r.json());
+    renderMenuTable();
+  }
+
+  function renderMenuTable() {
+    document.querySelector('#menu-table tbody').innerHTML = allItems.map(item => `
+      <tr>
+        <td><strong>${item.name}</strong>${item.description?`<br><span style="font-size:12px;color:var(--muted)">${item.description}</span>`:''}</td>
+        <td>${item.category_name}</td>
+        <td>₹${item.price}</td>
+        <td>
+          <label class="toggle">
+            <input type="checkbox" ${item.is_available?'checked':''} onchange="toggleItem(${item.id},this.checked)">
+            <span>${item.is_available?'Yes':'No'}</span>
+          </label>
+        </td>
+        <td>
+          <button class="btn-sm btn-danger-sm" onclick="deleteItem(${item.id})">Remove</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function toggleItem(id, available) {
+    const item = allItems.find(i=>i.id===id);
+    await fetch('/api/menu/items/'+id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...item, is_available: available ? 1 : 0, category_id: item.category_id })
+    });
+    allItems = await fetch('/api/menu/items').then(r=>r.json());
+    renderMenuTable();
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Remove this item from menu?')) return;
+    await fetch('/api/menu/items/'+id, { method: 'DELETE' });
+    allItems = await fetch('/api/menu/items').then(r=>r.json());
+    renderMenuTable();
+  }
+
+  // ── Tables ─────────────────────────────────────────────────────────────────
+  async function addTable() {
+    const name = document.getElementById('new-table-name').value.trim();
+    if (!name) return;
+    await fetch('/api/tables', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    document.getElementById('new-table-name').value = '';
+    allTables = await fetch('/api/tables').then(r=>r.json());
+    renderTablesTable();
+  }
+
+  function renderTablesTable() {
+    document.querySelector('#tables-table tbody').innerHTML = allTables.map(t => `
+      <tr>
+        <td><strong>${t.name}</strong></td>
+        <td>${t.active_order ? `<span style="color:var(--accent);font-weight:600">Occupied</span>` : `<span style="color:var(--green)">Free</span>`}</td>
+        <td>
+          <button class="btn-sm btn-danger-sm" onclick="removeTable(${t.id},'${t.name}')">Remove</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function removeTable(id, name) {
+    if (!confirm(`Remove table "${name}"? This won't affect existing orders.`)) return;
+    await fetch('/api/tables/'+id, { method: 'DELETE' });
+    allTables = await fetch('/api/tables').then(r=>r.json());
+    renderTablesTable();
+  }
+
+  // ── QR Codes ───────────────────────────────────────────────────────────────
+  function renderQRCodes() {
+    const grid = document.getElementById('qr-grid');
+    grid.innerHTML = '';
+    allTables.forEach(t => {
+      const url = `http://${location.host}/order?table=${t.id}`;
+      const card = document.createElement('div');
+      card.className = 'qr-card';
+      card.innerHTML = `
+        <div class="qr-table-name">${t.name}</div>
+        <div class="qr-canvas" id="qr-${t.id}"></div>
+        <div class="qr-url">${url}</div>
+        <button class="print-btn" onclick="printQR('${t.name}','${url}')">🖨️ Print</button>
+      `;
+      grid.appendChild(card);
+      new QRCode(document.getElementById('qr-'+t.id), {
+        text: url, width: 120, height: 120,
+        colorDark: '#1a1a2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H
+      });
+    });
+  }
+
+  function printQR(tableName, url) {
+    const w = window.open('', '_blank');
+    w.document.write(`
+      <html><head><title>QR - ${tableName}</title>
+      <style>body{font-family:sans-serif;text-align:center;padding:40px} h1{font-size:48px;margin-bottom:16px} p{color:#888;font-size:12px;margin-top:12px}</style>
+      </head><body>
+      <h1>${tableName}</h1>
+      <div id="qr"></div>
+      <p>Scan to order | ${url}</p>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+      <script>new QRCode(document.getElementById('qr'),{text:'${url}',width:200,height:200,colorDark:'#000',colorLight:'#fff'});setTimeout(()=>window.print(),800)<\/script>
+      </body></html>
+    `);
+  }
+
+  // ── Settings ───────────────────────────────────────────────────────────────
+  function loadSettingsForm() {
+    document.getElementById('s-cafe-name').value = settings.cafe_name || '';
+    document.getElementById('s-upi-id').value = settings.upi_id || '';
+    document.getElementById('s-currency').value = settings.currency || '₹';
+  }
+
+  async function saveSettings() {
+    await fetch('/api/settings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cafe_name: document.getElementById('s-cafe-name').value,
+        upi_id: document.getElementById('s-upi-id').value,
+        currency: document.getElementById('s-currency').value,
+      })
+    });
+    const msg = document.getElementById('settings-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display='none', 2500);
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Order – BrewDesk</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1a1a2e;
+    --muted: #7a7a8a;
+    --accent: #c8873a;
+    --accent-soft: #fef3e7;
+    --green: #2a9d5c;
+    --border: #ebe9e3;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--ink);
+    color: white;
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .cafe-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+  .table-badge {
+    background: var(--accent);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* Category Tabs */
+  .cat-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    position: sticky;
+    top: 72px;
+    z-index: 90;
+  }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    white-space: nowrap;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cat-tab.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  /* Menu sections */
+  .menu-section {
+    padding: 20px 16px 0;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+
+  .items-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .item-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .item-info { flex: 1; }
+  .item-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+  .item-desc { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .item-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .item-actions { display: flex; align-items: center; gap: 8px; }
+
+  .qty-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .qty-btn:active { transform: scale(0.9); }
+  .qty-btn.add { background: var(--ink); color: white; }
+
+  .qty-display {
+    width: 28px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  /* Cart Bar */
+  .cart-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 200;
+  }
+  .cart-btn {
+    width: 100%;
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 16px 20px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+  }
+  .cart-btn:active { transform: scale(0.98); }
+  .cart-btn.hidden { display: none; }
+  .cart-count {
+    background: var(--accent);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 14px;
+  }
+
+  /* Cart Panel */
+  .cart-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: none;
+  }
+  .cart-panel.open { display: block; }
+  .cart-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+  }
+  .cart-drawer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-radius: 24px 24px 0 0;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 20px 16px;
+  }
+  .cart-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .cart-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+  .cart-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cart-item-name { font-weight: 500; font-size: 14px; }
+  .cart-item-price { font-size: 13px; color: var(--muted); }
+  .cart-item-right { display: flex; align-items: center; gap: 10px; }
+  .cart-item-total { font-weight: 700; font-size: 15px; min-width: 55px; text-align: right; }
+
+  .cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 8px;
+    border-top: 2px solid var(--ink);
+    margin-top: 8px;
+  }
+  .cart-total-label { font-weight: 600; font-size: 16px; }
+  .cart-total-amount { font-weight: 700; font-size: 22px; color: var(--accent); }
+
+  .notes-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 16px;
+    resize: none;
+  }
+  .notes-input:focus { outline: none; border-color: var(--accent); }
+
+  .place-order-btn {
+    width: 100%;
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 18px;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .place-order-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Success Screen */
+  .success-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 500;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+  }
+  .success-screen.show { display: flex; }
+  .success-icon { font-size: 72px; margin-bottom: 16px; }
+  .success-ref {
+    background: var(--ink);
+    color: var(--accent);
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    padding: 12px 28px;
+    border-radius: 12px;
+    margin: 8px 0 16px;
+    letter-spacing: 2px;
+  }
+  .success-msg { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+  .back-btn {
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  /* Loading */
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 60px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="cafe-name" id="cafe-name">☕ Café</div>
+    <div class="table-badge" id="table-badge">Table –</div>
+  </div>
+</div>
+
+<div class="cat-tabs" id="cat-tabs"></div>
+
+<div id="menu-container">
+  <div class="spinner"></div>
+</div>
+
+<!-- Cart Bar -->
+<div class="cart-bar">
+  <button class="cart-btn hidden" id="cart-btn" onclick="openCart()">
+    <span>🛒 View Cart</span>
+    <span class="cart-count" id="cart-count">0 items</span>
+  </button>
+</div>
+
+<!-- Cart Panel -->
+<div class="cart-panel" id="cart-panel">
+  <div class="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer">
+    <div class="cart-handle"></div>
+    <div class="cart-title">Your Order</div>
+    <div id="cart-items-list"></div>
+    <div class="cart-total-row">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-amount" id="cart-total">₹0</span>
+    </div>
+    <textarea class="notes-input" id="order-notes" placeholder="Any special instructions? (optional)" rows="2"></textarea>
+    <button class="place-order-btn" id="place-btn" onclick="placeOrder()">Place Order →</button>
+  </div>
+</div>
+
+<!-- Success -->
+<div class="success-screen" id="success-screen">
+  <div class="success-icon">✅</div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:8px;">Order Placed!</h2>
+  <p style="color:var(--muted);margin-bottom:12px;">Your order reference:</p>
+  <div class="success-ref" id="success-ref">–</div>
+  <p class="success-msg">Show this to your waiter if needed.<br>Your food is on its way!</p>
+  <button class="back-btn" onclick="resetOrder()">Order More</button>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const tableId = params.get('table') || '1';
+  let menu = [];
+  let cart = {};
+  let tableName = '';
+
+  async function init() {
+    try {
+      const [settings, menuData, tablesData] = await Promise.all([
+        fetch('/api/settings').then(r => r.json()),
+        fetch('/api/menu').then(r => r.json()),
+        fetch('/api/tables').then(r => r.json())
+      ]);
+
+      document.getElementById('cafe-name').textContent = '☕ ' + (settings.cafe_name || 'Café');
+
+      const table = tablesData.find(t => String(t.id) === String(tableId));
+      tableName = table ? table.name : 'T' + tableId;
+      document.getElementById('table-badge').textContent = '🪑 ' + tableName;
+      document.title = tableName + ' – ' + settings.cafe_name;
+
+      menu = menuData;
+      renderMenu(menuData);
+      renderCategoryTabs(menuData);
+    } catch (e) {
+      document.getElementById('menu-container').innerHTML = '<p style="text-align:center;padding:40px;color:#888">Could not load menu. Please refresh.</p>';
+    }
+  }
+
+  function renderCategoryTabs(menuData) {
+    const tabs = document.getElementById('cat-tabs');
+    tabs.innerHTML = menuData.map((cat, i) =>
+      `<div class="cat-tab ${i===0?'active':''}" onclick="scrollToSection('cat-${cat.id}',this)">${cat.name}</div>`
+    ).join('');
+  }
+
+  function scrollToSection(id, el) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderMenu(menuData) {
+    const container = document.getElementById('menu-container');
+    container.innerHTML = menuData.map(cat => `
+      <div class="menu-section" id="cat-${cat.id}">
+        <div class="section-title">${cat.name}</div>
+        <div class="items-grid">
+          ${cat.items.map(item => `
+            <div class="item-card" id="item-${item.id}">
+              <div class="item-info">
+                <div class="item-name">${item.name}</div>
+                ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+                <div class="item-price">₹${item.price}</div>
+              </div>
+              <div class="item-actions">
+                ${cart[item.id] ? `
+                  <button class="qty-btn" onclick="changeQty(${item.id},${item.name},${item.price},-1)">−</button>
+                  <span class="qty-display">${cart[item.id]}</span>
+                ` : ''}
+                <button class="qty-btn add" onclick="changeQty(${item.id},'${item.name.replace(/'/g,"\\'")}',${item.price},1)">+</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function changeQty(itemId, itemName, itemPrice, delta) {
+    const current = cart[itemId] || 0;
+    const newQty = current + delta;
+    if (newQty <= 0) {
+      delete cart[itemId];
+    } else {
+      cart[itemId] = newQty;
+    }
+    updateCartBar();
+    // Re-render just the item
+    renderMenu(menu);
+    // Restore cart quantities in render
+  }
+
+  function updateCartBar() {
+    const totalItems = Object.values(cart).reduce((a,b) => a+b, 0);
+    const btn = document.getElementById('cart-btn');
+    const count = document.getElementById('cart-count');
+    if (totalItems > 0) {
+      btn.classList.remove('hidden');
+      count.textContent = totalItems + ' item' + (totalItems>1?'s':'');
+    } else {
+      btn.classList.add('hidden');
+    }
+  }
+
+  function getCartItems() {
+    const items = [];
+    menu.forEach(cat => {
+      cat.items.forEach(item => {
+        if (cart[item.id]) items.push({ ...item, qty: cart[item.id] });
+      });
+    });
+    return items;
+  }
+
+  function openCart() {
+    const items = getCartItems();
+    let total = 0;
+    const list = document.getElementById('cart-items-list');
+    list.innerHTML = items.map(item => {
+      const subtotal = item.price * item.qty;
+      total += subtotal;
+      return `
+        <div class="cart-item">
+          <div>
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-price">₹${item.price} × ${item.qty}</div>
+          </div>
+          <div class="cart-item-right">
+            <button class="qty-btn" style="width:28px;height:28px;font-size:16px" onclick="changeQty(${item.id},'${item.name}',${item.price},-1);openCart()">−</button>
+            <span style="font-weight:700">${item.qty}</span>
+            <button class="qty-btn add" style="width:28px;height:28px;font-size:16px" onclick="changeQty(${item.id},'${item.name}',${item.price},1);openCart()">+</button>
+            <div class="cart-item-total">₹${subtotal}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('cart-total').textContent = '₹' + total;
+    document.getElementById('cart-panel').classList.add('open');
+  }
+
+  function closeCart() {
+    document.getElementById('cart-panel').classList.remove('open');
+  }
+
+  async function placeOrder() {
+    const items = getCartItems();
+    if (items.length === 0) return;
+    const btn = document.getElementById('place-btn');
+    btn.disabled = true;
+    btn.textContent = 'Placing order...';
+
+    const payload = {
+      table_id: parseInt(tableId),
+      items: items.map(i => ({ item_id: i.id, quantity: i.qty })),
+      notes: document.getElementById('order-notes').value
+    };
+
+    try {
+      const resp = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const order = await resp.json();
+      if (!resp.ok) throw new Error(order.error);
+
+      closeCart();
+      document.getElementById('success-ref').textContent = order.order_ref;
+      document.getElementById('success-screen').classList.add('show');
+    } catch(e) {
+      alert('Failed to place order: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Place Order →';
+    }
+  }
+
+  function resetOrder() {
+    cart = {};
+    document.getElementById('success-screen').classList.remove('show');
+    document.getElementById('place-btn').disabled = false;
+    document.getElementById('place-btn').textContent = 'Place Order →';
+    document.getElementById('order-notes').value = '';
+    updateCartBar();
+    renderMenu(menu);
+  }
+
+  init();
+</script>
+</body>
+</html>
